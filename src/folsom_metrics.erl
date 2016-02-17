@@ -26,6 +26,7 @@
 
 -export([
          new_counter/1,
+         new_temporal_counter/1,
          new_gauge/1,
          new_histogram/1,
          new_histogram/2,
@@ -81,6 +82,9 @@
 
 new_counter(Name) ->
     folsom_ets:add_handler(counter, Name).
+
+new_temporal_counter(Name) ->
+    folsom_ets:add_handler(temporal_counter, Name).
 
 new_gauge(Name) ->
     folsom_ets:add_handler(gauge, Name).
