@@ -154,6 +154,9 @@ get_values(Name) ->
 
 get_values(Name, counter) ->
     folsom_metrics_counter:get_value(Name);
+get_values(Name, temporal_counter) ->
+    folsom_metrics_counter:get_value(Name),
+    folsom_metrics_counter:clear(Name);
 get_values(Name, gauge) ->
     folsom_metrics_gauge:get_value(Name);
 get_values(Name, histogram) ->
@@ -194,9 +197,9 @@ get_tags(Name) ->
 %%% Internal functions
 %%%===================================================================
 
-maybe_add_handler(counter, Name, false) ->
+maybe_add_handler(C, Name, false) when C == counter orelse C == temporal_counter ->
     true = folsom_metrics_counter:new(Name),
-    true = ets:insert(?FOLSOM_TABLE, {Name, #metric{type = counter}}),
+    true = ets:insert(?FOLSOM_TABLE, {Name, #metric{type = C}}),
     ok;
 maybe_add_handler(gauge, Name, false) ->
     true = folsom_metrics_gauge:new(Name),
@@ -298,7 +301,7 @@ delete_metric(Name, duration) ->
     true = ets:delete(?DURATION_TABLE, Name),
     true = ets:delete(?FOLSOM_TABLE, Name),
     ok;
-delete_metric(Name, counter) ->
+delete_metric(Name, C) when C == counter orelse C == temporal_counter ->
     ok = folsom_metrics_counter:delete(Name),
     true = ets:delete(?FOLSOM_TABLE, Name),
     ok;
@@ -362,25 +365,25 @@ delete_history(Name, #history{tid = Tid}) ->
     true = ets:delete(Tid),
     ok.
 
-notify(Name, {inc, Value}, counter, true) ->
+notify(Name, {inc, Value}, C, true) when C == counter orelse C == temporal_counter ->
     folsom_metrics_counter:inc(Name, Value),
     ok;
-notify(Name, {inc, Value}, counter, false) ->
-    add_handler(counter, Name),
+notify(Name, {inc, Value}, C, false) when C == counter orelse C == temporal_counter  ->
+    add_handler(C, Name),
     folsom_metrics_counter:inc(Name, Value),
     ok;
-notify(Name, {dec, Value}, counter, true) ->
+notify(Name, {dec, Value}, C, true) when C == counter orelse C == temporal_counter  ->
     folsom_metrics_counter:dec(Name, Value),
     ok;
-notify(Name, {dec, Value}, counter, false) ->
-    add_handler(counter, Name),
+notify(Name, {dec, Value}, C, false) when C == counter orelse C == temporal_counter  ->
+    add_handler(C, Name),
     folsom_metrics_counter:dec(Name, Value),
     ok;
-notify(Name, clear, counter, true) ->
+notify(Name, clear, C, true) when C == counter orelse C == temporal_counter  ->
     folsom_metrics_counter:clear(Name),
     ok;
-notify(Name, clear, counter, false) ->
-    add_handler(counter, Name),
+notify(Name, clear, C, false) when C == counter orelse C == temporal_counter  ->
+    add_handler(C, Name),
     folsom_metrics_counter:clear(Name),
     ok;
 notify(Name, Value, gauge, true) ->
@@ -436,4 +439,3 @@ notify(Name, Value, spiral, false) ->
     ok;
 notify(_, _, Type, _) ->
     {error, Type, unsupported_metric_type}.
-
