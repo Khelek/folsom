@@ -155,8 +155,9 @@ get_values(Name) ->
 get_values(Name, counter) ->
     folsom_metrics_counter:get_value(Name);
 get_values(Name, temporal_counter) ->
-    folsom_metrics_counter:get_value(Name),
-    folsom_metrics_counter:clear(Name);
+    Val = folsom_metrics_counter:get_value(Name),
+    folsom_metrics_counter:clear(Name),
+    Val;
 get_values(Name, gauge) ->
     folsom_metrics_gauge:get_value(Name);
 get_values(Name, histogram) ->
